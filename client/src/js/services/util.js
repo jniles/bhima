@@ -204,6 +204,11 @@ function UtilService(moment) {
     });
   };
 
+  service.uniqBy = function uniqBy(array, key) {
+    const keys = array.map(row => row[key]);
+    return array.filter((row, index) => keys.indexOf(row[key]) === index);
+  };
+
   service.isEmptyObject = function isEmptyObject(object) {
     return Object.keys(object).length === 0;
   };

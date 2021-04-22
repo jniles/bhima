@@ -4,7 +4,6 @@ describe('util', () => {
 
   beforeEach(module('angularMoment', 'bhima.services'));
 
-
   beforeEach(inject(_util_ => {
     util = _util_;
   }));
@@ -41,6 +40,12 @@ describe('util', () => {
     fn();
     fn();
     expect(context).to.deep.equal({ y : 3 });
+  });
+
+  it('#uniqBy() should create an array of unique values by a key', () => {
+    const array = [{ id : 1, name : 'Jonathan' }, { id : 2, name : 'whoops' }, { id : 2, name : 'dupe' }];
+    expect(util.uniqBy(array, 'id')).to.deep.equal([{ id : 1, name : 'Jonathan' }, { id : 2, name : 'whoops' }]);
+    expect(util.uniqBy(array, 'name')).to.deep.equal(array);
   });
 
   it('#before() should call a function when a target method is called', () => {
@@ -208,7 +213,6 @@ describe('util', () => {
     const formatedData = util.maskObjectFromKeys(data, mask);
     expect(formatedData).to.deep.equal(expected);
   });
-
 
   it('#debounce() should fire a function in the future', (done) => {
     const spy = chai.spy();
