@@ -1,7 +1,6 @@
 /* global inject, expect */
 describe('Pool', () => {
 
-
   let Pool;
   let data;
 
@@ -10,8 +9,7 @@ describe('Pool', () => {
   beforeEach(inject(_Pool_ => {
     Pool = _Pool_;
 
-    data = [
-      { id : 1, name : 'Bob' },
+    data = [{ id : 1, name : 'Bob' },
       { id : 2, name : 'Sarah' },
     ];
   }));
@@ -71,5 +69,22 @@ describe('Pool', () => {
 
     pool = new Pool('id', data);
     expect(pool.size()).to.equal(2);
+  });
+
+  it('#isUnavailable()/#isAvailable reports status of item in pool', () => {
+    const pool = new Pool('id', data);
+
+    // a used be marked as unavailable
+    pool.use(1);
+    expect(pool.isUnavailable(1)).to.equal(true);
+    expect(pool.isAvailable(1)).to.equal(false);
+
+    // an unused item should be marked as available
+    expect(pool.isUnavailable(2)).to.equal(false);
+    expect(pool.isAvailable(2)).to.equal(true);
+
+    // an unknown value is neither used nor unused
+    expect(pool.isAvailable(100)).to.equal(false);
+    expect(pool.isUnavailable(100)).to.equal(false);
   });
 });

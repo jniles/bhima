@@ -35,6 +35,16 @@ function PoolService(Store) {
     return item;
   };
 
+  // return true if the value is in the "available" pool
+  Pool.prototype.isAvailable = function isAvailable(id) {
+    return this.available.contains(id);
+  };
+
+  // returns true if value is in the "unavailable" pool
+  Pool.prototype.isUnavailable = function isUnavailable(id) {
+    return this.unavailable.contains(id);
+  };
+
   // return the unavailable item to the pool
   Pool.prototype.release = function release(id) {
     const item = this.unavailable.get(id);
