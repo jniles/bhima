@@ -3,7 +3,7 @@ angular.module('bhima.services')
 
 StockFormService.$inject = [
   'StockItemService', 'Store', 'AppCache', 'SessionService', '$timeout',
-  'bhConstants',
+  'bhConstants', 'moment',
 ];
 
 /**
@@ -14,7 +14,7 @@ StockFormService.$inject = [
  *
  * @todo - implement the cache feature
  */
-function StockFormService(StockItem, Store, AppCache, Session, $timeout, bhConstants) {
+function StockFormService(StockItem, Store, AppCache, Session, $timeout, bhConstants, moment) {
   /**
    * @constructor
    */
@@ -132,7 +132,6 @@ function StockFormService(StockItem, Store, AppCache, Session, $timeout, bhConst
    * @description
    * Sets the grid's error flag on the row to render a red highlight
    * on the row.
-   *
    */
   function errorLineHighlight(rowIdx, store) {
     const { ROW_ERROR_FLAG } = bhConstants.grid;
@@ -207,6 +206,34 @@ function StockFormService(StockItem, Store, AppCache, Session, $timeout, bhConst
     return this.store.data.every((item) => {
       return item.quantity >= 0 && item.lot && item.lot.uuid;
     });
+  };
+
+  /**
+   * @method formatExportRows
+   *
+   * @description
+   * Used in the stock exit form to download the working sheet in Excel format.
+   *
+   * @param {array} rows - refer to the grid data array
+   * @return {array} - return an array of array with value as an object in this format : { value : ... }
+   */
+  StockForm.prototype.formatExportRows = function formatExportRows(rows = []) {
+    return rows.map(row => {
+      const code = row.inventory && row.inventory.code ? row.inventory.code : null;
+      const description = row.inventory && row.inventory.text ? row.inventory.text : null;
+      const lot = row.lot && row.lot.label ? row.lot.label : null;
+      const price = row.inventory && row.inventory.unit_cost ? row.inventory.unit_cost : null;
+      const quantity = row.quantity ? row.quantity : null;
+      const type = row.quantity && row.inventory.unit_type ? row.inventory.unit_type : null;
+      const available = row.inventory && row.inventory.quantity ? row.inventory.quantity : null;
+      const amount = row.inventory && row.inventory.unit_cost && row.quantity
+        ? row.inventory.unit_cost * row.quantity : 0;
+      const expiration = row.lot && row.lot.expiration_date
+        ? moment(row.lot.expiration_date).format(bhConstants.dates.formatDB) : null;
+
+      return [code, description, lot, price, quantity, type, available, amount, expiration].map(value => ({ value }));
+    });
+
   };
 
   return StockForm;

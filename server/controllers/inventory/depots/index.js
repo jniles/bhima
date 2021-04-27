@@ -17,8 +17,7 @@ const router = require('express').Router();
 
 const { uuid } = require('../../../lib/util');
 const db = require('../../../lib/db');
-const NotFound = require('../../../lib/errors/NotFound');
-const BadRequest = require('../../../lib/errors/BadRequest');
+const { NotFound, BadRequest } = require('../../../lib/errors');
 const FilterParser = require('../../../lib/filter');
 
 /** expose depots routes */

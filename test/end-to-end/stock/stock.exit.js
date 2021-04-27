@@ -5,7 +5,7 @@ const moment = require('moment');
 const helpers = require('../shared/helpers');
 const ExitPage = require('./stock.exit.page');
 
-function StockExiTests() {
+function StockExitTests() {
   const DEPOT_PRINCIPAL = 'Depot Principal';
   const DEPOT_SECONDAIRE = 'Depot Secondaire';
   const PATIENT = 'PA.TPA.2';
@@ -234,4 +234,4 @@ function StockExiTests() {
   });
 }
 
-module.exports = StockExiTests;
+module.exports = StockExitTests;

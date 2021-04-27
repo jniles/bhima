@@ -22,6 +22,7 @@ function StockExitItemService(UUID) {
     this.lot_uuid = null;
     this.code = null;
     this.label = null;
+    this.text = '';
     this.quantity = 0;
     this.unit_cost = 0;
     this.expiration_date = new Date();
@@ -111,22 +112,32 @@ function StockExitItemService(UUID) {
     return this._isValid;
   };
 
-  // a quick way to merge properties onto the sink if it exists in the source
-  function mergeIfPropertyExists(property, source, sink) {
-    if (angular.isDefined(source[property])) {
-      sink[property] = source[property];
-    }
-  }
-
-  StockExitItem.prototype.configure = function configure(item) {
-    const mergeableProperties = [
-      'uuid', 'inventory_uuid', 'code', 'label', 'quantity', 'unit_cost', 'expiration_date', 'text', 'lot_uuid',
-    ];
-
-    mergeableProperties.forEach(prop => mergeIfPropertyExists(prop, item, this));
-
-    this.expiration_date = new Date(this.expiration_date);
+  /**
+   * @function configureInventory
+   *
+   * @description
+   * Configures the inventory properties.
+   */
+  StockExitItem.prototype.configureInventory = function configureInventory(inventory) {
+    this.code = inventory.code;
+    this.text = inventory.text;
+    this.inventory_uuid = inventory.inventory_uuid;
+    this.unit_type = inventory.unit_type;
     this._initialised = true;
+  };
+
+  /**
+   * @function configure
+   *
+   * @description
+   * Configures the lot properties on the row.
+   */
+  StockExitItem.prototype.configure = function configure(item) {
+    this.expiration_date = new Date(this.expiration_date);
+    this.available = item.quantity;
+    this.unit_cost = item.unit_cost;
+    this.lot_uuid = item.uuid;
+
     this.validate();
   };
 

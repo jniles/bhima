@@ -1,15 +1,16 @@
 <div ng-if="row.entity._initialised">
-  <ui-select append-to-body="true"
-    name="lot"
-    ng-model="row.entity.lot"
-    ng-change="grid.appScope.onLotSelect(row.entity)"
+  <ui-select
+    append-to-body="true"
+    name="lot_uuid"
+    ng-model="row.entity.lot_uuid"
+    on-select="grid.appScope.form.onSelectLot(row.entity, $item, row.entity)"
     required>
     <ui-select-match placeholder="{{ ::'FORM.PLACEHOLDERS.LOT' | translate }}">
       <span>{{$select.selected.label}}</span>
     </ui-select-match>
     <ui-select-choices
-      repeat="lot as lot in row.entity.lots | filter: $select.search">
-      <span>{{ lot.label }} </span>
+      repeat="lot.uuid as lot in grid.appScope.form.listAvailableLots(row.entity) | filter: $select.search">
+      <span>{{ lot.label }} ({{lot.expiration_date | date }})</span>
     </ui-select-choices>
   </ui-select>
 </div>
