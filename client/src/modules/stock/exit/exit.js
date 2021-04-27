@@ -184,7 +184,6 @@ function StockExitController(
 
   // remove item
   function removeItem(item) {
-    console.log('removing:', item);
     vm.form.removeItem(item.uuid);
     vm.form.validate();
   }

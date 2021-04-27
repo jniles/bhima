@@ -17,6 +17,7 @@ function StockExitFormService(
   StockExitItem, Store, AppCache, Session, $timeout, bhConstants, moment,
   Pool, Stock, $q, util, UUID,
 ) {
+
   /**
    * @constructor
    */
@@ -87,6 +88,8 @@ function StockExitFormService(
     return this.getLotsInStockAtDate(new Date())
       .then((lots) => {
 
+        console.log('lots:', lots);
+
         // we only need a few key properties. Let the
         const slimmed = lots.map(lot => ({
           uuid : lot.uuid,
@@ -107,12 +110,19 @@ function StockExitFormService(
 
   /**
    * @function onSelectInventory
+   *
+   * @description
+   * Selects the inventory item from the pool and ensures that we
    */
   StockExitForm.prototype.onSelectInventory = function onSelectInventory(row, inventory) {
-    console.log('row:', row);
-    console.log('inventory:', inventory);
-    row.configureInventory(inventory);
     row.setComparisonExpirationDate(this.details.date);
+    row.configureInventory(inventory);
+
+    // if there is only a single lot for this inventory, auto-select it
+    const available = this.listAvailableLots(row);
+    if (available.length === 1) { row.configure(available[0]); }
+
+    this._collateAvailableInventoryItems();
     this.validate();
   };
 
@@ -332,6 +342,7 @@ function StockExitFormService(
       delete this._error;
     });
   };
+
   /**
    * @function errorLineHighlight
    *

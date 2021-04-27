@@ -66,5 +66,12 @@ function PoolService(Store) {
     return this._size;
   };
 
+  // clear the pool
+  Pool.prototype.clear = function clear() {
+    this.available.clear();
+    this.unavailable.clear();
+    this._size = 0;
+  };
+
   return Pool;
 }

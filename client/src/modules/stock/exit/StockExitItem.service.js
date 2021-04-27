@@ -133,7 +133,7 @@ function StockExitItemService(UUID) {
    * Configures the lot properties on the row.
    */
   StockExitItem.prototype.configure = function configure(item) {
-    this.expiration_date = new Date(this.expiration_date);
+    this.expiration_date = new Date(item.expiration_date);
     this.available = item.quantity;
     this.unit_cost = item.unit_cost;
     this.lot_uuid = item.uuid;

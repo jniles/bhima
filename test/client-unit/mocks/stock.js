@@ -19,7 +19,11 @@
 
     service.singleInventoryFormStoreData = () => ({
       inventory_uuid : 'd03e7870-0c8e-47d4-a7a8-a17a9924b3f4',
+      text : 'Quinine 500mg',
       unit_cost : 0.5,
+      unit_type : 'CES',
+      expires : true,
+      code : 'QUI_CES',
       lots : service.lots(),
     });
 

@@ -71,6 +71,16 @@ describe('Pool', () => {
     expect(pool.size()).to.equal(2);
   });
 
+  it('#clear() removes all values from the pool', () => {
+    const pool = new Pool('id', data);
+    expect(pool.size()).to.equal(2);
+
+    pool.clear();
+    expect(pool.size()).to.equal(0);
+    expect(pool.available.data).to.have.length(0);
+    expect(pool.unavailable.data).to.have.length(0);
+  });
+
   it('#isUnavailable()/#isAvailable reports status of item in pool', () => {
     const pool = new Pool('id', data);
 

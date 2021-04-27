@@ -6,10 +6,12 @@ describe('StockExitItemService', () => {
 
   let StockExitItem;
   let lots;
+  let inventory;
 
   beforeEach(inject((StockExitItemService, MockStockDataService) => {
     StockExitItem = StockExitItemService;
     lots = MockStockDataService.flatLotsFromSingleInventory();
+    inventory = MockStockDataService.singleInventoryFormStoreData();
   }));
 
   it('constructs a stock exit item', () => {
@@ -25,19 +27,27 @@ describe('StockExitItemService', () => {
     expect(item._errors).to.have.length(3);
   });
 
+  it('#configureInventory() sets the basic invntory properties', () => {
+    const item = new StockExitItem();
+    expect(item._initialised).to.equal(false);
+
+    item.configureInventory(inventory);
+
+    expect(item.text).to.equal(inventory.text);
+    expect(item.code).to.equal(inventory.code);
+    expect(item.unit_type).to.equal(inventory.unit_type);
+    expect(item._initialised).to.equal(true);
+  });
+
   it('#configure() sets basic properties on the item', () => {
     const item = new StockExitItem();
     expect(item._initialised).to.equal(false);
 
     const [lot] = lots;
     item.configure(lot);
-
-    expect(item._initialised).to.equal(true);
-
-    expect(item.quantity).to.equal(lot.quantity);
-    expect(item.label).to.equal(lot.label);
-    expect(item.uuid).to.equal(lot.uuid);
-    expect(item.inventory_uuid).to.equal(lot.inventory_uuid);
+    expect(item.quantity).to.equal(0);
+    expect(item.available).to.equal(lot.quantity);
+    expect(item.lot_uuid).to.equal(lot.uuid);
   });
 
   it('#isExpired() uses the comparison date for expiration date errors', () => {
@@ -72,8 +82,8 @@ describe('StockExitItemService', () => {
 
     expect(item._errors).to.deep.equal([
       'STOCK.ERRORS.NO_INVENTORY',
-      'STOCK.ERRORS.NO_LOTS_DEFINED',
       'STOCK.ERRORS.LOT_HAS_EXPIRED',
+      'STOCK.ERRORS.LOT_QUANTITY_IS_NOT_POSITIVE',
     ]);
 
     // now, we change the quantity to make it 0
@@ -83,7 +93,6 @@ describe('StockExitItemService', () => {
     // we should gain the quantity error
     expect(item._errors).to.deep.equal([
       'STOCK.ERRORS.NO_INVENTORY',
-      'STOCK.ERRORS.NO_LOTS_DEFINED',
       'STOCK.ERRORS.LOT_HAS_EXPIRED',
       'STOCK.ERRORS.LOT_QUANTITY_IS_NOT_POSITIVE',
     ]);
@@ -95,12 +104,12 @@ describe('StockExitItemService', () => {
     // we should lose the expiration date error
     expect(item._errors).to.deep.equal([
       'STOCK.ERRORS.NO_INVENTORY',
-      'STOCK.ERRORS.NO_LOTS_DEFINED',
       'STOCK.ERRORS.LOT_QUANTITY_IS_NOT_POSITIVE',
     ]);
 
     // finally set the quantity positive again.
     item.quantity = 30;
+    delete item.lot_uuid;
     item.validate();
 
     // now we haver only two errors
