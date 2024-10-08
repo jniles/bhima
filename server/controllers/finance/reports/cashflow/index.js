@@ -28,6 +28,9 @@ const TEMPLATE_TRANSACTION_TYPES = './server/controllers/finance/reports/cashflo
 const TEMPLATE_GLOBAL = './server/controllers/finance/reports/cashflow/reportGlobal.handlebars';
 const TEMPLATE_SYNTHETIC = './server/controllers/finance/reports/cashflow/reportSynthetic.handlebars';
 
+const INCOME_CASH_FLOW = 6;
+const EXPENSE_CASH_FLOW = 7;
+
 // expose to the API
 exports.report = report;
 exports.byService = reportByService;
@@ -234,13 +237,8 @@ function report(req, res, next) {
     .then(rows => {
       data.cashboxes = rows;
       data.cashAccountIds = data.cashboxes.map(cashbox => cashbox.account_id);
-      data.cashLabels = _.chain(data.cashboxes)
-        .map(cashbox => `${cashbox.label}`).uniq().join(' | ')
-        .value();
-
-      data.cashLabelSymbol = _.chain(data.cashboxes)
-        .map(cashbox => cashbox.symbol).uniq().join(' + ');
-
+      data.cashLabels = [...new Set(data.cashboxes.map(cashbox => `${cashbox.label}`))].join(' | ');
+      data.cashLabelSymbol = [...new Set(data.cashboxes.map(cashbox => cashbox.symbol))].join(' + ');
       data.cashLabelDetails = data.cashboxes.map(cashbox => `${cashbox.account_number} - ${cashbox.account_label}`);
 
       // build periods columns from calculated period
@@ -248,9 +246,7 @@ function report(req, res, next) {
     })
     .then(periods => {
       data.periodDates = periods.map(p => p.start_date);
-
       data.periods = periods.map(p => p.id);
-
       data.colspan = data.periods.length + 1;
 
       // build periods columns from calculated period
@@ -258,12 +254,9 @@ function report(req, res, next) {
     })
     .then(openingBalanceData => {
       data.openingBalanceData = openingBalanceData;
-      const INCOME_CASH_FLOW = 6;
-      const EXPENSE_CASH_FLOW = 7;
-      const types = [INCOME_CASH_FLOW, EXPENSE_CASH_FLOW];
 
       // Obtain the accounts from the configuration of accounting references
-      return ReferencesCompute.getAccountsConfigurationReferences(types);
+      return ReferencesCompute.getAccountsConfigurationReferences([INCOME_CASH_FLOW, EXPENSE_CASH_FLOW]);
     })
     .then(configurationData => {
       data.configurationData = configurationData;
@@ -399,16 +392,16 @@ function report(req, res, next) {
         const expenseTotal = aggregateTotal(data, expenseTotalByTextKeys);
         const otherTotal = aggregateTotal(data, otherTotalByTextKeys);
 
-        const totalIncomePeriodColumn = totalIncomesPeriods(data, incomeTotal, otherTotal);
+        const totalIncomePeriodColumn = calculatePeriodTotals(data, incomeTotal, otherTotal);
 
         const dataOpeningBalance = totalOpening(data.cashboxes, data.openingBalanceData, data.periods);
         const totalOpeningBalanceColumn = dataOpeningBalance.tabFormated;
         const dataOpeningBalanceByAccount = dataOpeningBalance.tabAccountsFormated;
 
-        const totalIncomeGeneral = totalIncomes(data, incomeTotal, otherTotal, totalOpeningBalanceColumn);
+        const totalIncomeGeneral = calculatePeriodTotals(data, incomeTotal, otherTotal, totalOpeningBalanceColumn);
 
-        const totalPeriodColumn = totalPeriods(data, incomeTotal, expenseTotal, otherTotal);
-        const totalBalancesGeneral = totalBalances(data, totalIncomeGeneral, expenseTotal);
+        const totalPeriodColumn = calculatePeriodTotals(data, incomeTotal, expenseTotal, otherTotal);
+        const calculatePeriodTotalsGeneral = calculatePeriodTotals(data, totalIncomeGeneral, expenseTotal);
 
         _.extend(data, {
           incomes,
@@ -427,7 +420,7 @@ function report(req, res, next) {
           totalPeriodColumn,
           totalOpeningBalanceColumn,
           totalIncomeGeneral,
-          totalBalancesGeneral,
+          calculatePeriodTotalsGeneral,
           dataOpeningBalanceByAccount,
         });
 
@@ -468,16 +461,15 @@ function report(req, res, next) {
         const otherGlobalsTotal = aggregateTotal(data, otherGlobalsTotalByTextKeys);
 
         // LOMAME
-        const totalIncomePeriodColumn = totalIncomesPeriods(data, incomeGlobalsTotal, otherGlobalsTotal);
+        const totalIncomePeriodColumn = calculatePeriodTotals(data, incomeGlobalsTotal, otherGlobalsTotal);
 
         const dataOpeningBalance = totalOpening(data.cashboxes, data.openingBalanceData, data.periods);
         const totalOpeningBalanceColumn = dataOpeningBalance.tabFormated;
         const dataOpeningBalanceByAccount = dataOpeningBalance.tabAccountsFormated;
 
-        const totalIncomeGeneral = totalIncomes(data, incomeGlobalsTotal, otherGlobalsTotal, totalOpeningBalanceColumn);
-
-        const totalPeriodColumn = totalPeriods(data, incomeGlobalsTotal, expenseGlobalsTotal, otherGlobalsTotal);
-        const totalBalancesGeneral = totalBalances(data, totalIncomeGeneral, expenseGlobalsTotal);
+        const totalIncomeGeneral = calculatePeriodTotals(data, incomeGlobalsTotal, otherGlobalsTotal, totalOpeningBalanceColumn);
+        const totalPeriodColumn = calculatePeriodTotals(data, incomeGlobalsTotal, expenseGlobalsTotal, otherGlobalsTotal);
+        const calculatePeriodTotalsGeneral = calculatePeriodTotals(data, totalIncomeGeneral, expenseGlobalsTotal);
 
         _.extend(data, {
           incomesGlobals,
@@ -496,7 +488,7 @@ function report(req, res, next) {
           totalPeriodColumn,
           totalOpeningBalanceColumn,
           totalIncomeGeneral,
-          totalBalancesGeneral,
+          calculatePeriodTotalsGeneral,
           dataOpeningBalanceByAccount,
         });
 
@@ -544,36 +536,17 @@ function aggregateTotal(data, source = {}) {
   return totals;
 }
 
-function totalPeriods(data, incomeTotal, expenseTotal, transferTotal) {
-  const total = {};
-  data.periods.forEach(periodId => {
-    total[periodId] = incomeTotal[periodId] + expenseTotal[periodId] + transferTotal[periodId];
-  });
-  return total;
-}
-
-function totalIncomesPeriods(data, incomeTotal, transferTotal) {
-  const total = {};
-  data.periods.forEach(periodId => {
-    total[periodId] = incomeTotal[periodId] + transferTotal[periodId];
-  });
-  return total;
-}
-
-function totalBalances(data, incomeTotal, expenseTotal) {
-  const total = {};
-  data.periods.forEach(periodId => {
-    total[periodId] = incomeTotal[periodId] + expenseTotal[periodId];
-  });
-  return total;
-}
-
-function totalIncomes(data, incomeTotal, otherTotal, opening) {
-  const total = {};
-  data.periods.forEach(periodId => {
-    total[periodId] = incomeTotal[periodId] + otherTotal[periodId] + opening[periodId];
-  });
-  return total;
+/**
+ * A generic function to calculate totals across periods
+ * @param {Object} data - The data object containing periods
+ * @param {...Object} sources - One or more objects containing values for each period
+ * @returns {Object} An object with totals for each period
+ */
+function calculatePeriodTotals(data, ...sources) {
+  return data.periods.reduce((totals, periodId) => {
+    totals[periodId] = sources.reduce((sum, source) => sum + (source[periodId] || 0), 0);
+    return totals;
+  }, {});
 }
 
 async function reporting(options, session) {
@@ -657,7 +630,8 @@ async function reporting(options, session) {
         GROUP BY transaction_type_id, account_id;
       `;
 
-  const params = [...periodParams,
+  const params = [
+    ...periodParams,
     [data.cashAccountIds],
     data.dateFrom,
     data.dateTo,
@@ -666,7 +640,9 @@ async function reporting(options, session) {
     data.dateFrom,
     data.dateTo,
     data.dateFrom,
-    data.dateTo];
+    data.dateTo,
+  ];
+
   const rows = await db.exec(query, params);
 
   // split incomes from expenses
@@ -685,7 +661,7 @@ async function reporting(options, session) {
   const incomeTotal = aggregateTotal(data, incomeTotalByTextKeys);
   const expenseTotal = aggregateTotal(data, expenseTotalByTextKeys);
   const otherTotal = aggregateTotal(data, otherTotalByTextKeys);
-  const totalPeriodColumn = totalPeriods(data, incomeTotal, expenseTotal, otherTotal);
+  const totalPeriodColumn = calculatePeriodTotals(data, incomeTotal, expenseTotal, otherTotal);
 
   _.extend(data, {
     incomes,
@@ -729,63 +705,58 @@ function getCashboxesDetails(cashboxesIds) {
 /**
  * getOpeningBalanceData
  *
- * this function returns details of cashboxe ids given
- * @param {array} cashboxesIds
- * @param {array} periods
+ * This function returns opening balance details for given cash account IDs and periods
+ * @param {Array} cashAccountIds - Array of cash account IDs
+ * @param {Array} periods - Array of period objects with start_date property
+ * @returns {Promise} A promise that resolves to an array of opening balance data
  */
-
 function getOpeningBalanceData(cashAccountIds, periods) {
-  const getOpening = [];
+  const openingBalancePromises = cashAccountIds.reduce((promises, accountId) => {
+    const accountPromises = periods.map(period => AccountsExtra.getOpeningBalanceForDate(accountId, period.start_date, false),
+    );
 
-  cashAccountIds.forEach(account => {
-    periods.forEach(period => {
-      getOpening.push(AccountsExtra.getOpeningBalanceForDate(account, period.start_date, false));
-    });
-  });
+    return promises.concat(accountPromises);
+  }, []);
 
-  return q.all(getOpening);
+  return Promise.all(openingBalancePromises);
 }
 
+/**
+ * Calculate total opening balances for accounts across different periods
+ * @param {Array} accountIds - Array of account objects with account_id and account_label
+ * @param {Array} openingBalanceData - Array of opening balance data for accounts
+ * @param {Array} periods - Array of period identifiers
+ * @returns {Object} Object containing formatted totals and account-specific data
+ */
 function totalOpening(accountIds, openingBalanceData, periods) {
-  const tabFormated = {};
-  const tabAccountsFormated = [];
-  const tabData = [];
+  // Format account-specific data
+  const accountsFormated = accountIds.map(account => {
+    const accountData = { account_label : account.account_label };
 
-  accountIds.forEach(account => {
-    const accountId = account.account_id;
+    const accountOpeningData = openingBalanceData.filter(item => item.accountId === account.account_id);
 
-    const accountsFormated = {
-      account_label : account.account_label,
-    };
-
-    const getData = openingBalanceData.filter(item => {
-      return item.accountId === accountId;
+    periods.forEach((period, index) => {
+      accountData[period] = accountOpeningData[index]?.balance || 0;
     });
 
-    getData.forEach((gt, idd) => {
-      periods.forEach((period, index) => {
-        if (idd === index) {
-          accountsFormated[period] = gt.balance;
-        }
-      });
-    });
-
-    tabAccountsFormated.push(accountsFormated);
-    tabData.push({ id : accountId, opening : getData });
+    return accountData;
   });
 
-  periods.forEach((period, index) => {
-    let sum = 0;
-    tabData.forEach(tab => {
-      tab.opening.forEach((tb, idx) => {
-        if (index === idx) {
-          sum += parseInt(tb.balance, 10);
-        }
-      });
-    });
+  // Calculate total opening balance for each period
+  const periodTotals = periods.reduce((totals, period, periodIndex) => {
+    const sum = accountIds.reduce((periodSum, account) => {
+      const accountOpeningData = openingBalanceData.find(item => item.accountId === account.account_id
+        && item === openingBalanceData[periodIndex],
+      );
+      return periodSum + (parseInt(accountOpeningData?.balance, 10) || 0);
+    }, 0);
 
-    tabFormated[period] = sum;
-  });
+    totals[period] = sum;
+    return totals;
+  }, {});
 
-  return { tabFormated, tabAccountsFormated };
+  return {
+    tabFormated : periodTotals,
+    tabAccountsFormated : accountsFormated,
+  };
 }
