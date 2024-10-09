@@ -13,7 +13,6 @@
  * @requires lib/errors/BadRequest
  */
 const _ = require('lodash');
-const q = require('q');
 
 const db = require('../../../../lib/db');
 const Fiscal = require('../../fiscal');
@@ -575,14 +574,8 @@ async function reporting(options, session) {
 
   data.cashboxes = await getCashboxesDetails(cashboxesIds);
   data.cashAccountIds = data.cashboxes.map(cashbox => cashbox.account_id);
-
-  data.cashLabels = _.chain(data.cashboxes)
-    .map(cashbox => `${cashbox.label}`).uniq().join(' | ')
-    .value();
-
-  data.cashLabelSymbol = _.chain(data.cashboxes)
-    .map(cashbox => cashbox.symbol).uniq().join(' + ');
-
+  data.cashLabels = [...new Set(data.cashboxes.map(cashbox => `${cashbox.label}`))].join(' | ');
+  data.cashLabelSymbol = [...new Set(data.cashboxes.map(cashbox => cashbox.symbol))].join(' + ');
   data.cashLabelDetails = data.cashboxes.map(cashbox => `${cashbox.account_number} - ${cashbox.account_label}`);
 
   // build periods columns from calculated period
