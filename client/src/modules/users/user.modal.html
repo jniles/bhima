@@ -13,7 +13,9 @@
       </li>
     </ol>
   </div>
-<div class="modal-body" style="overflow-y: scroll; max-height:600px; "> <div class="form-group" ng-class="{ 'has-error' : UserForm.$submitted && UserForm.display_name.$invalid }">
+
+  <div class="modal-body" style="overflow-y: scroll; max-height:600px; ">
+    <div class="form-group" ng-class="{ 'has-error' : UserForm.$submitted && UserForm.display_name.$invalid }">
       <label class="control-label" translate>FORM.LABELS.DISPLAY_NAME</label>
       <input
         name="display_name"
@@ -126,6 +128,20 @@
         <div class="help-block" ng-messages="UserForm.passwordVerify.$error" ng-show="UserForm.$submitted">
           <div ng-messages-include="modules/templates/messages.tmpl.html"></div>
         </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="select-language" translate>FORM.LABELS.LANGUAGE</label>
+      <select
+        id="select-language"
+        ng-model="UserModalCtrl.user.preferred_language"
+        ng-options="key as lang.name for (key, lang) in UserModalCtrl.languages"
+        class="form-control">
+        <option value="" disabled="disabled" translate>FORM.SELECT.LANGUAGE</option>
+      </select>
+      <div class="help-block">
+        <p translate>USERS.PREFERRED_LANGUAGE_DESCRIPTION</p>
       </div>
     </div>
 

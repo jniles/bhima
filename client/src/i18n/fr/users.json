@@ -22,7 +22,8 @@
     "UPDATE" : "Éditer",
     "LAST_LOGIN" : "Dernière connexion",
     "UPDATING_USER" : "Mise à jour utilisateur",
-    "VIEW_USERS" : "View Users",
+    "VIEW_USERS" : "Voir les utilisateurs",
+    "PREFERRED_LANGAUGE_DESCRIPTION" : "Langue à utiliser pour l'envoi de rapports et d'alertes automatisés à cet utilisateur. Cela ne modifie pas l'interface utilisateur.",
     "ACTIONS" : {
       "DELETE_CASH_PAYMENT" : "Supprimer les paiements",
       "DELETE_INVOICE" : "Supprimer les factures",

@@ -47,7 +47,17 @@ UPDATE unit SET `path` = 'TREE.HUMAN_RESOURCES' WHERE `path` = 'TREE.HUMANS_RESS
 
 /* 
  * @author: jniles
- * @date: 2024-04-03
+ * @date: 2025-04-03
  * Add the dhis2_uid column to the enterprise table to allow integration with DHIS2.
+ * See issue #8000
  */
 CALL add_column_if_missing('enterprise', 'dhis2_uid', 'TEXT DEFAULT NULL');
+
+
+/**
+ * @author: jniles
+ * @date: 2025-04-09
+ * Adds the preferred language to the user table for rendering reports
+ * See issue #7936
+ */
+CALL add_column_if_missing('user', 'preferred_lang', 'VARCHAR(5) NOT NULL DEFAULT "fr"');

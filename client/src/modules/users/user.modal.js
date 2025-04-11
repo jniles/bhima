@@ -2,10 +2,10 @@ angular.module('bhima.controllers')
   .controller('UserModalController', UserModalController);
 
 UserModalController.$inject = [
-  '$state', 'ProjectService', 'UserService', 'NotifyService', 'appcache', 'params',
+  '$state', 'ProjectService', 'UserService', 'NotifyService', 'appcache', 'LanguageService', 'params',
 ];
 
-function UserModalController($state, Projects, Users, Notify, AppCache, params) {
+function UserModalController($state, Projects, Users, Notify, AppCache, Languages, params) {
   const vm = this;
 
   const cache = AppCache('UserModal');
@@ -45,6 +45,20 @@ function UserModalController($state, Projects, Users, Notify, AppCache, params) 
   } else {
     vm.user.projects = [];
   }
+
+  vm.languageService = Languages;
+
+  // bind the language service for use in the view
+  Languages.read()
+    .then(languages => {
+      vm.languages = languages;
+
+      // default to french as the language to display
+      if (!vm.user.preferred_language) {
+        vm.user.preferred_language = 'fr';
+      }
+    })
+    .catch(Notify.handleError);
 
   // submit the data to the server from all two forms (update, create)
   function submit(userForm) {
