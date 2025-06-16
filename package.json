@@ -112,7 +112,7 @@
     "angular-ui-bootstrap": "^2.5.6",
     "angular-ui-grid": "^4.12.7",
     "bootstrap": "^3.4.1",
-    "chart.js": "^4.4.9",
+    "chart.js": "^4.5.0",
     "chartjs-plugin-datalabels": "^2.2.0",
     "connect-redis": "^8.1.0",
     "cron": "^4.3.1",
