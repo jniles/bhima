@@ -177,7 +177,7 @@ function StockInventoryAdjustmentController(
     })
       .then(lots => {
 
-        // eslint-disable-next-line
+        // eslint-disable-next-line no-restricted-syntax
         for (const lot of lots) {
           const row = vm.Stock.addItems(1);
 
