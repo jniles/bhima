@@ -21,7 +21,7 @@ async function build(req, res) {
   const currencyId = Number(req.query.currencyId);
   const { enterprise } = req.session;
 
-  const qs = _.extend(req.query, DEFAULT_OPTIONS);
+  const qs = _.extend({}, req.query, DEFAULT_OPTIONS);
   qs.enterprise = enterprise;
 
   const metadata = _.clone(req.session);
