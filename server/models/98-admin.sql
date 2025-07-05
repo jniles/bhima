@@ -383,12 +383,12 @@ END;
 /**
 * Migration functions
 *
-* These functions are used in myigration scripts to add or drop columns when
+* These functions are used in migration scripts to add or drop columns when
 * necessary.
 */
 
 -- from https://stackoverflow.com/questions/173814/using-alter-to-drop-a-column-if-it-exists-in-mysql
-DROP FUNCTION IF EXISTS bh_column_exists;
+DROP FUNCTION IF EXISTS bh_column_exists$$
 
 CREATE FUNCTION bh_column_exists(
   tname VARCHAR(64) ,
@@ -499,7 +499,7 @@ END $$
 DROP PROCEDURE IF EXISTS drop_foreign_key $$
 CREATE PROCEDURE drop_foreign_key(in theTable varchar(128), in theConstraintName varchar(128) )
 BEGIN
- IF(Constraint_exists(theTable, theConstraintName) > 0) THEN
+ IF Constraint_exists(theTable, theConstraintName) THEN
 
    SET @s = CONCAT(' ALTER TABLE ' , theTable , ' DROP FOREIGN KEY  ' , theConstraintName);
    PREPARE stmt FROM @s;
