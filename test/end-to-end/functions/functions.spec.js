@@ -22,21 +22,21 @@ test.describe('Job Titles Management', () => {
   const newProfession = 'Comptable';
   const updateProfession = 'Chef Comptable';
 
-  test('successfully creates a new job title', async () => {
+  test('successfully creates a new Function', async () => {
     await page.create(newProfession);
     await notification.hasSuccess();
   });
 
-  test('successfully edits a job title', async () => {
+  test('successfully edits a Function', async () => {
     await page.update(newProfession, updateProfession);
     await notification.hasSuccess();
   });
 
-  test('errors when missing job tit create when incorrect job title', async () => {
+  test('errors when missing function create when incorrect Function', async () => {
     await page.errorOnCreateFunction();
   });
 
-  test('successfully delete a job title', async () => {
+  test('successfully delete a function', async () => {
     await page.remove(updateProfession);
     await notification.hasSuccess();
   });
