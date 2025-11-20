@@ -36,9 +36,9 @@ function isWithholdingRubric(rubric) {
 }
 
 function isPayrollTaxRubric(rubric) {
-  return rubric.is_tax
+  return (rubric.is_tax === 1
     && rubric.is_employee !== 1
-    && rubric.is_linked_pension_fund === 0;
+    && rubric.is_linked_pension_fund === 0);
 }
 
 function isPensionFundRubric(rubric) {
