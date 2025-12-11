@@ -115,7 +115,7 @@ async function getValueForReference(abbr, isAmoDep, referenceDescription, period
     WHERE pt.fiscal_year_id = ?
       AND pt.locked = 0
       AND p.number BETWEEN 0 AND ?
-      AND pt.account_id IN (/* expand account IDs here */);`;
+      AND pt.account_id IN (?);`;
 
   const accounts = await getAccountsForReference(abbr, isAmoDep);
   const accountIds = accounts.map(a => a.account_id);
