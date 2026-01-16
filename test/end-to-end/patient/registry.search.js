@@ -56,7 +56,6 @@ function PatientRegistrySearch() {
   async function expectNumberOfGridRows(number) {
     const rows = await getRows();
     if (Array.isArray(number)) {
-      console.log('rows:', rows);
       expect(new Set(number),
         `Expected Patient Registry ui-grid's row count to be in ${number}.`).toContain(rows.length);
     } else {
