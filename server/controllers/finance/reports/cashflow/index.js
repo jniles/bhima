@@ -327,10 +327,11 @@ async function report(req, res) {
    * 3: All accounts to exclude, respectively by account reference
    */
   const [
+    ,
     configReferenceCashflow,
     configAccountsCashflow,
     configAccountsExcludeCashflow,
-  ]= configurationData;
+  ] = configurationData;
 
   if (referenceAccountsRevenues.length) {
     localCashReferenceAccounts = configReferenceCashflow.filter(
@@ -459,7 +460,7 @@ async function report(req, res) {
         a.label  AS account_label,
         gl.transaction_type_id,
         tt.type  AS transaction_type,
-        CASE WHEN tt.type = 5 THEN 'income' ELSE tt.text END AS transaction_text,
+        CASE WHEN gl.transaction_type_id = 5 THEN 'income' ELSE tt.text END AS transaction_text,
         gl.account_id,
         gl.period_id,
         SUM(gl.credit_equiv - gl.debit_equiv) AS balance
@@ -567,7 +568,7 @@ async function report(req, res) {
     const totalPeriodColumn = cashflowFunction.totalPeriods(data, incomeTotal, expenseTotal, otherTotal);
     const totalBalancesGeneral = cashflowFunction.totalBalances(data, totalIncomeGeneral, expenseTotal);
 
-    Object.assing(data, {
+    Object.assign(data, {
       incomes,
       expenses,
       others,
