@@ -5,8 +5,9 @@ jobs:
     name: runner / eslint
     runs-on: ubuntu-latest
     permissions:
-      checks: write
       contents: read
+      checks: write
+      issues: write
       pull-requests: write
     steps:
       - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
