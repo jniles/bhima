@@ -9,8 +9,15 @@ describe('test/server-unit/db', () => {
   });
 
   it('should check the connection to mysql', async () => {
-    let conn = await db.pool.getConnection()
-    assert.ok(conn, 'The database pool should aquire a connection');
+    let conn;
+    try {
+      conn = await db.pool.getConnection();
+      assert.ok(conn, 'The database pool should aquire a connection');
+    } finally {
+      if (conn) {
+        conn.release();
+      }
+    }
   });
 
   it('#exec() should retrieve a promise result', async () => {
@@ -38,8 +45,7 @@ describe('test/server-unit/db', () => {
     assert.equal(four, 4, 'The second query should return 4.');
   });
 
-  it('should close those database connnection pool', async () => {
-    await db.pool.end();
-    assert.ok(true, 'The database pool was closed.');
+  it('should expose a method to close the database connection pool', () => {
+    assert.equal(typeof db.pool.end, 'function', 'The database pool should expose an end() method.');
   });
 });

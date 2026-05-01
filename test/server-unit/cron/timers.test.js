@@ -53,8 +53,8 @@ describe('test/server-unit/cron/timers', () => {
 
     removeJob(id);
 
-    expect(stop).to.have.been.called();
-    expect(CURRENT_JOBS.size).to.equal(0);
+    assert.equal(stop.mock.callCount(), 1);
+    assert.equal(CURRENT_JOBS.size, 0);
   });
 
   it('#removeJob() stops a running cron job added by #addJob()', () => {
