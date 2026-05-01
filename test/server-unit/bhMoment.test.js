@@ -9,12 +9,11 @@ const endTime = '23:59:59.999';
 
 const date = new BhMoment(dateString);
 
-
-
 /**
  *
  * @param startDate
  * @param endDate
+ * @param date
  * @param dateBhMoment
  */
 function evaluate(startDate, endDate, dateBhMoment) {
