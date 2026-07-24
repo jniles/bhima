@@ -33,7 +33,7 @@ function PurchaseRegistryController(
   vm.search = search;
   vm.openColumnConfiguration = openColumnConfiguration;
   vm.gridApi = {};
-  vm.toggleInlineFilter = toggleInlineFilter;
+  vm.toggleInlineFilter = toggleInlineFilter; 
   vm.onRemoveFilter = onRemoveFilter;
   vm.download = Purchases.download;
   vm.status = bhConstants.purchaseStatus;
@@ -183,7 +183,7 @@ function PurchaseRegistryController(
     Modal.openPurchaseOrderAnalysis(purchase)
       .then((reload) => {
         if (reload) {
-          load(Purchases.filters.formatHTTP(true));
+          return load(Purchases.filters.formatHTTP(true));
         }
       })
       .catch(handler);
@@ -219,9 +219,16 @@ function PurchaseRegistryController(
 
         purchases.forEach(purchase => {
           purchase.hasStockMovement = !allowEditStatus(purchase.status_id);
+
+          purchase.requiresAnalysis =
+            purchase.status_id === vm.status.WAITING_CONFIRMATION ||
+            purchase.status_id === vm.status.CONFIRMED;
         });
 
         vm.uiGridOptions.data = purchases;
+        if ($state.params.purchase) {
+          editStatus($state.params.purchase)
+        }
       })
       .catch(handler)
       .finally(toggleLoadingIndicator);
