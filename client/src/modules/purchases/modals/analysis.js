@@ -4,8 +4,8 @@ angular.module('bhima.controllers')
 PurchaseOrderAnalysisModalController.$inject = [
   'Store', 'InventoryService', 'NotifyService',
   '$uibModalInstance', 'StockService', 'ReceiptModal', 'data',
-  'PurchaseOrderService', '$uibModalInstance', 'bhConstants',
-  '$translate',
+  'PurchaseOrderService', '$uibModalInstance',
+  '$translate', 'SessionService', 'uiGridConstants', '$state',
 ];
 
 /**
@@ -17,14 +17,22 @@ PurchaseOrderAnalysisModalController.$inject = [
  * @param Stock
  * @param Receipts
  * @param data
+ * @param Purchases
+ * @param Instance
+ * @param $translate
+ * @param Session
+ * @param uiGridConstants
+ * @param $state
  */
 function PurchaseOrderAnalysisModalController(Store, Inventories, Notify, Modal, Stock, Receipts, data,
-  Purchases, Instance, bhConstants, $translate,
+  Purchases, Instance, $translate, Session, uiGridConstants, $state,
 ) {
   const vm = this;
   vm.isCreateState = true;
   vm.requistionReference = '';
   vm.purchaseItems = [];
+  vm.editPurchase = editPurchase;
+  vm.editStatusPurchase = editStatusPurchase;
 
   // expose to view
   vm.close = Instance.close;
@@ -49,8 +57,7 @@ function PurchaseOrderAnalysisModalController(Store, Inventories, Notify, Modal,
       headerCellFilter : 'translate',
       width            : '20%',
       cellTemplate     : 'modules/stock/inventories/templates/status.cell.html',
-    },
-    {
+    }, {
       field            : 'quantity_ordered',
       displayName      : 'STOCK.ANALYSIS.ORDER_QTY',
       headerCellFilter : 'translate',
@@ -68,6 +75,31 @@ function PurchaseOrderAnalysisModalController(Store, Inventories, Notify, Modal,
       type             : 'number',
       cellClass        : 'text-right',
       cellTemplate     : 'modules/stock/inventories/templates/appro.cell.html',
+    },{
+      field            : 'quantity_ordered',
+      displayName      : 'STOCK.ANALYSIS.ORDER_QTY',
+      headerCellFilter : 'translate',
+      width            : '20%',
+      cellClass        : 'text-right',
+      type : 'number',
+    },{
+      field            : 'purchase_price',
+      displayName      : 'FORM.LABELS.UNIT_PRICE',
+      headerCellFilter : 'translate',
+      width            : '20%',
+      cellClass        : 'text-right',
+      cellFilter       : 'currency:row.entity.currency_id',
+      type : 'number',
+    }, {
+      field            : 'purchase_total',
+      displayName      : 'FORM.LABELS.TOTAL',
+      headerCellFilter : 'translate',
+      aggregationType  : uiGridConstants.aggregationTypes.sum,
+      width            : '20%',
+      cellClass        : 'text-right',
+      cellFilter       : 'currency:row.entity.currency_id',
+      type             : 'number',
+      aggregationHideLabel : true,
     },
   ];
 
@@ -75,6 +107,7 @@ function PurchaseOrderAnalysisModalController(Store, Inventories, Notify, Modal,
     appScopeProvider : vm,
     enableColumnMenus : false,
     columnDefs : columns,
+    showColumnFooter  : true,
     enableSorting : true,
     fastWatch : true,
     flatEntityAccess : true,
@@ -89,35 +122,36 @@ function PurchaseOrderAnalysisModalController(Store, Inventories, Notify, Modal,
       period : 'allTime',
       depot_uuid : depot.uuid,
       purchase_analyse_uuid : vm.analysis.uuid,
-      limit : 1000000,
     };
 
     Stock.inventories.read(null, filters)
       .then(rows => {
-        console.log('HVRRRRRRRRRRRRRR');
-        console.log(rows);
         const dataPurchasesAnalised = [];
+        toggleLoadingSuggest();
 
         // set status flags
         vm.purchaseItems.forEach(item => {
-
-
           let purchaseItem = {
             text : item.text,
             quantity : '---',
             status_translated : '---',
             quantity_ordered : item.quantity,
             S_Q : '---',
+            purchase_price : item.unit_price,
+            purchase_total : item.total,
           };
 
           rows.forEach(row => {
-            setStatusFlag(row);
+            Stock.setStatusFlag(row);
             row.status_translated = $translate.instant(Stock.statusLabelMap(row.status));
             row.unit_type = $translate.instant(row.unit_type);
 
             if (item.inventory_uuid === row.inventory_uuid) {
               purchaseItem = row;
               purchaseItem.quantity_ordered = item.quantity;
+              purchaseItem.purchase_price = item.unit_price;
+              purchaseItem.purchase_total = item.total;
+              purchaseItem.currency_id = vm.analysis.currency_id;
             }
           });
           
@@ -127,7 +161,8 @@ function PurchaseOrderAnalysisModalController(Store, Inventories, Notify, Modal,
         vm.gridOptions.data = dataPurchasesAnalised;
 
       })
-      .catch(Notify.handleError);
+      .catch(Notify.handleError)
+      .finally(toggleLoadingSuggest);
 
   };
 
@@ -146,20 +181,19 @@ function PurchaseOrderAnalysisModalController(Store, Inventories, Notify, Modal,
 
   /**
    *
-   * @param item
    */
-  function setStatusFlag(item) {
+  function toggleLoadingSuggest() {
+    vm.loadingSuggest = !vm.loadingSuggest;
+  }
 
-    item.noAlert = !item.hasRiskyLots && !item.hasNearExpireLots && !item.hasExpiredLots;
-    item.alert = item.hasExpiredLots;
-    item.warning = !item.hasExpiredLots && (item.hasNearExpireLots || item.hasRiskyLots);
+  function editPurchase() {
+    $state.go('purchasesUpdate', { uuid : vm.analysis.uuid });
+    Modal.close(true);
+  }
 
-    item.hasStockOut = item.status === bhConstants.stockStatus.IS_STOCK_OUT;
-    item.isInStock = item.status === bhConstants.stockStatus.IS_IN_STOCK;
-    item.hasSecurityWarning = item.status === bhConstants.stockStatus.HAS_SECURITY_WARNING;
-    item.hasMinimumWarning = item.status === bhConstants.stockStatus.HAS_MINIMUM_WARNING;
-    item.hasOverageWarning = item.status === bhConstants.stockStatus.HAS_OVERAGE_WARNING;
-    item.isUnusedStock = item.status === bhConstants.stockStatus.UNUSED_STOCK;
+  function editStatusPurchase() {
+    $state.go('purchasesRegistry', { purchase : vm.analysis });
+    Modal.close(true);
   }
 
   startup();

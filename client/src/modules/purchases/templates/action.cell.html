@@ -71,7 +71,7 @@
       </a>
     </li>
 
-    <li class="divider" ng-if="row.entity.status_id === grid.appScope.status.WAITING_CONFIRMATION || row.entity.status_id === grid.appScope.status.CONFIRMED"ng-if="row.entity.status_id === grid.appScope.status.WAITING_CONFIRMATION || row.entity.status_id === grid.appScope.status.CONFIRMED">
+    <li class="divider" ng-if="row.entity.requiresAnalysis">
     <li ng-if="row.entity.status_id === grid.appScope.status.WAITING_CONFIRMATION || row.entity.status_id === grid.appScope.status.CONFIRMED">
       <a
         href
