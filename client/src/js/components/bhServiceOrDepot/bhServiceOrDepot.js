@@ -15,6 +15,9 @@ bhServiceOrDepotController.$inject = [
   'ServiceService', 'DepotService', 'StockService', 'NotifyService', '$q',
 ];
 
+const SERVICE_REQUESTOR_TYPE = 1;
+const DEPOT_REQUESTOR_TYPE = 2;
+
 /**
  * service or depot selection component
  * @param Services
@@ -38,6 +41,13 @@ function bhServiceOrDepotController(Services, Depots, Stock, Notify, $q) {
       .catch(Notify.handleError);
   };
 
+  // react to the parent changing the bound uuid after collections have loaded
+  $ctrl.$onChanges = function onChanges(changes) {
+    if (changes.uuid && !changes.uuid.isFirstChange() && $ctrl.requestors) {
+      $ctrl.requestorType = findRequestorType($ctrl.uuid);
+    }
+  };
+
   /**
    *
    * @param root0
@@ -52,7 +62,7 @@ function bhServiceOrDepotController(Services, Depots, Stock, Notify, $q) {
     $ctrl.depotIds = $ctrl.depots.map(depot => depot.uuid);
 
     if ($ctrl.uuid) {
-      $ctrl.requestorType = getRequestorType($ctrl.uuid);
+      $ctrl.requestorType = findRequestorType($ctrl.uuid);
     }
   }
 
@@ -60,30 +70,29 @@ function bhServiceOrDepotController(Services, Depots, Stock, Notify, $q) {
    *
    * @param identifier
    */
-  function getRequestorType(identifier) {
-    const SERVICE_REQUESTOR_TYPE = 1;
-    const DEPOT_REQUESTOR_TYPE = 2;
-    const foundInService = $ctrl.serviceUuids.includes(identifier);
-    const foundInDepot = $ctrl.depotIds.includes(identifier);
-
-    if (foundInService) {
-      return $ctrl.requestors.filter(row => row.id === SERVICE_REQUESTOR_TYPE)[0];
+  function findRequestorType(identifier) {
+    if ($ctrl.serviceUuids.includes(identifier)) {
+      return $ctrl.requestors.find(row => row.id === SERVICE_REQUESTOR_TYPE);
     }
 
-    if (foundInDepot) {
-      return $ctrl.requestors.filter(row => row.id === DEPOT_REQUESTOR_TYPE)[0];
+    if ($ctrl.depotIds.includes(identifier)) {
+      return $ctrl.requestors.find(row => row.id === DEPOT_REQUESTOR_TYPE);
     }
 
     return null;
   }
 
   $ctrl.onChangeRequestor = () => {
+    $ctrl.requestorUuid = null;
     $ctrl.onSelectCallback({ requestor : {} });
   };
 
-  $ctrl.onSelectRequestor = requestor => {
-    $ctrl.requestorUuid = requestor.uuid;
-    requestor.requestor_type_id = $ctrl.requestorType.id;
-    $ctrl.onSelectCallback({ requestor });
+  $ctrl.onSelectRequestor = (requestor) => {
+    const selected = Object.assign({}, requestor, {
+      requestor_type_id : $ctrl.requestorType.id,
+    });
+
+    $ctrl.requestorUuid = selected.uuid;
+    $ctrl.onSelectCallback({ requestor : selected });
   };
 }

@@ -1,8 +1,8 @@
 angular.module('bhima.components')
   .component('bhStrengthMeter', {
     template : `
-      <div class='strength-meter' ng-if="$ctrl.showStrengthMeter">
-       <div class='strength-meter-fill' data-strength='{{$ctrl.counter()}}'></div>
+      <div class="strength-meter" ng-if="$ctrl.showStrengthMeter">
+        <div class="strength-meter-fill" data-strength="{{$ctrl.strength}}"></div>
       </div>`,
     bindings : {
       password : '<',
@@ -24,10 +24,16 @@ StrengthMeterController.$inject = [
  * input.
  */
 function StrengthMeterController(PasswordMeterService, Session) {
+  const settings = Session.enterprise && Session.enterprise.settings;
 
-  this.$onInit = () => {
-    this.showStrengthMeter = (Session.enterprise && Session.enterprise.settings.enable_password_validation)
-     || !Session.enterprise;
-    this.counter = () => PasswordMeterService.counter(this.password);
+  // show the meter unless an enterprise is loaded AND has explicitly disabled it
+  this.showStrengthMeter = !settings || settings.enable_password_validation;
+
+  this.strength = 0;
+
+  this.$onChanges = (changes) => {
+    if (changes.password) {
+      this.strength = PasswordMeterService.counter(this.password);
+    }
   };
 }

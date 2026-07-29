@@ -52,7 +52,9 @@ bhDateInterval.$inject = [
 function bhDateInterval(bhConstants, Fiscal, Notify, Session, PeriodService, $translate) {
   const $ctrl = this;
 
+  // FIXME(@jniles) - this should be an API
   PeriodService.dateFormat = 'YYYY-MM-DD';
+
   // expose to the view
   $ctrl.search = search;
   $ctrl.clear = clear;
@@ -60,28 +62,29 @@ function bhDateInterval(bhConstants, Fiscal, Notify, Session, PeriodService, $tr
   $ctrl.lastDateTo = null;
 
   $ctrl.$onInit = () => {
-    // specify if clear button can be displayed
-    if (!angular.isDefined($ctrl.canClear)) {
-      $ctrl.canClear = true;
-    }
 
     $ctrl.options = [
-      { translateKey : 'FORM.LABELS.TODAY', fn : day, range : 'day' },
-      { translateKey : 'FORM.LABELS.THIS_WEEK', fn : week, range : 'week' },
-      { translateKey : 'FORM.LABELS.THIS_MONTH', fn : month, range : 'month' },
-      { translateKey : 'FORM.LABELS.THIS_YEAR', fn : year, range : 'year' },
+      { translateKey : 'FORM.LABELS.TODAY', range :'day' },
+      { translateKey : 'FORM.LABELS.THIS_WEEK', range: 'week' },
+      { translateKey : 'FORM.LABELS.THIS_MONTH', range: 'month' },
+      { translateKey : 'FORM.LABELS.THIS_YEAR', rangef: 'year' },
     ];
 
-    $ctrl.label = $ctrl.label || 'FORM.SELECT.DATE_INTERVAL';
+    Object.assign($ctrl, {
+      label : $ctrl.label || 'FORM.SELECT.DATE_INTERVAL',
+      canClear : $ctrl.canClear ?? true,
+      dateRangeError : false,
+    });
+
+
     $ctrl.dateFormat = bhConstants.dayOptions.format;
     $ctrl.pickerFromOptions = { showWeeks : false };
     $ctrl.pickerToOptions = { showWeeks : false, minDate : $ctrl.dateFrom };
     $ctrl.startDatePlaceholder = $translate.instant($ctrl.startDatePlaceholder || 'FORM.LABELS.START_DATE');
     $ctrl.endDatePlaceholder = $translate.instant($ctrl.endDatePlaceholder || 'FORM.LABELS.END_DATE');
-    $ctrl.dateRangeError = false;
 
     // if controller has requested limit-min-fiscal, fetch required information
-    if (angular.isDefined($ctrl.limitMinFiscal)) {
+    if ($ctrl.limitMinFiscal !== undefined) {
       getMinimumFiscalYearDate();
     }
 
@@ -99,7 +102,7 @@ function bhDateInterval(bhConstants, Fiscal, Notify, Session, PeriodService, $tr
   }
 
   $ctrl.onChangeDate = () => {
-    angular.extend($ctrl.pickerToOptions, { minDate : $ctrl.dateFrom });
+    $ctrl.pickerToOptions.minDate = $ctrl.dateFrom;
 
     // Make sure dateTo >= dateFrom
     if ($ctrl.dateFrom && $ctrl.dateTo) {
@@ -115,6 +118,7 @@ function bhDateInterval(bhConstants, Fiscal, Notify, Session, PeriodService, $tr
     if ($ctrl.onChange) {
       $ctrl.onChange({ dateFrom : $ctrl.dateFrom, dateTo : $ctrl.dateTo });
     }
+
     if ($ctrl.dateFrom !== $ctrl.lastDateFrom || $ctrl.dateTo !== $ctrl.lastDateTo) {
       delete $ctrl.selected;
       $ctrl.lastDateFrom = $ctrl.dateFrom;
@@ -122,18 +126,26 @@ function bhDateInterval(bhConstants, Fiscal, Notify, Session, PeriodService, $tr
     }
   };
 
+
+  const DATE_RANGES = Object.freeze({
+    day : 'today',
+    week : 'week',
+    month : 'month',
+    year : 'year',
+  });
+
+
   /**
-   *
    * @param selection
    */
   function search(selection) {
-    $ctrl.selected = selection.translateKey;
-    selection.fn();
-    $ctrl.onChangeDate();
+      $ctrl.selected = selection.translateKey;
+      setDateInterval(DATE_RANGES[selection.range]);
+      $ctrl.onChangeDate();
   }
 
+
   /**
-   *
    * @param key
    */
   function setDateInterval(key) {
@@ -141,34 +153,6 @@ function bhDateInterval(bhConstants, Fiscal, Notify, Session, PeriodService, $tr
     $ctrl.dateTo = new Date(PeriodService.index[key].limit.end());
     $ctrl.lastDateFrom = $ctrl.dateFrom;
     $ctrl.lastDateTo = $ctrl.dateTo;
-  }
-
-  /**
-   *
-   */
-  function day() {
-    setDateInterval('today');
-  }
-
-  /**
-   *
-   */
-  function week() {
-    setDateInterval('week');
-  }
-
-  /**
-   *
-   */
-  function month() {
-    setDateInterval('month');
-  }
-
-  /**
-   *
-   */
-  function year() {
-    setDateInterval('year');
   }
 
   /**
@@ -199,12 +183,11 @@ function bhDateInterval(bhConstants, Fiscal, Notify, Session, PeriodService, $tr
    *
    */
   function startup() {
-    const option = ['day', 'week', 'month', 'year'].indexOf($ctrl.mode);
+    const option = $ctrl.options.find(o => o.range === $ctrl.mode);
 
-    // set the default option according the mode
-    if (option !== -1) {
-      search($ctrl.options[option]);
-      angular.extend($ctrl.pickerFromOptions, { mode : $ctrl.mode });
+    if (option) {
+      search(option);
+      $ctrl.pickerFromOptions.mode = $ctrl.mode;
     } else {
       custom();
     }

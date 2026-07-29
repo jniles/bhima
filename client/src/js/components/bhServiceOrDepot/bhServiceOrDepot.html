@@ -34,7 +34,7 @@
       service-uuid="$ctrl.uuid"
       label="REQUISITION.SERVICE_REQUESTOR"
       on-select-callback="$ctrl.onSelectRequestor(service)"
-      required="true">
+      required="$ctrl.required">
     </bh-service-select>
   </div>
 
@@ -45,7 +45,7 @@
       filter-by-user-permission="true"
       label="REQUISITION.DEPOT_REQUESTOR"
       on-select-callback="$ctrl.onSelectRequestor(depot)"
-      required="true">
+      required="$ctrl.required">
     </bh-depot-select>
   </div>
 </div>
