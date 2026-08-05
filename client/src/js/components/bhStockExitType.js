@@ -7,10 +7,10 @@ const stockExitTypeTmpl = `
     ng-class="{ 'ima-stat-card-reversed' : $ctrl.isTypeSelected(type) }"
     ng-click="$ctrl.selectExitType(type)">
       <div class="panel-body text-center text-ellipsis">
-        <div class="ui lg statistic">
+        <div class="ui lg statistic" ng-switch="$ctrl.isTypeSelected(type)">
           <div class="value" translate>{{type.labelKey}}</div>
-          <div class="ui-hidable-label" ng-hide="$ctrl.isTypeSelected(type)" translate>{{type.descriptionKey}}</div>
-          <div class="ui-hidable-label" ng-show="$ctrl.isTypeSelected(type)" translate>{{$ctrl.destinationLabel}}</div>
+          <div class="ui-hidable-label" ng-switch-when="false" translate>{{type.descriptionKey}}</div>
+          <div class="ui-hidable-label" ng-switch-when="true" translate>{{$ctrl.destinationLabel}}</div>
         </div>
       </div>
   </button>
@@ -32,8 +32,8 @@ angular.module('bhima.components')
       onSelectCallback : '&',
       depot : '<?',
       exitType : '<?',
-      selectedExitType : '=',
-      destinationLabel : '=',
+      selectedExitType : '<?',
+      destinationLabel : '<?',
     },
   });
 
@@ -46,20 +46,19 @@ StockExitTypeController.$inject = ['StockEntryExitTypeService', 'NotifyService']
  */
 function StockExitTypeController(TypeService, Notify) {
   const $ctrl = this;
-  const types = TypeService.exitTypes;
 
   $ctrl.$onInit = function onInit() {
-    reloadExitTypes();
+    refreshAvailableExitTypes();
   };
 
   $ctrl.$onChanges = function onChanges(changes) {
-    if (changes.depot) {
-      reloadExitTypes();
-    }
-
+    const depotChanged = !!changes.depot;
     // when the exit type is cleared, reload exit types
-    if (changes.exitType?.currentValue === undefined) {
-      reloadExitTypes();
+    const exitTypeCleared =
+      changes.exitType?.currentValue === undefined;
+
+    if (depotChanged || exitTypeCleared) {
+      refreshAvailableExitTypes();
     }
   };
 
@@ -75,7 +74,7 @@ function StockExitTypeController(TypeService, Notify) {
    */
   $ctrl.selectExitType = (type) => {
     // this prevents us looking up a patient uuid in the service route
-    const shouldLookupEntity = angular.equals(type, $ctrl.selectedExitType);
+    const shouldLookupEntity = type.label === $ctrl.selectedExitType?.label;
 
     $ctrl.selectedExitType = type;
 
@@ -106,27 +105,33 @@ function StockExitTypeController(TypeService, Notify) {
    * @description
    * Checks to see if the type is selected
    */
-  $ctrl.isTypeSelected = (type) => {
-    return angular.equals(type.label, $ctrl.selectedExitType?.label);
-  };
+  $ctrl.isTypeSelected = (type) => type.label === $ctrl.selectedExitType?.label;
 
   /**
-   * @function reloadExitTypes
+   *
+   */
+  function resetSelection() {
+    $ctrl.selectedExitType = null;
+    $ctrl.destinationLabel = '';
+    $ctrl.entity = null;
+  }
+
+  /**
+   * @function refreshAvailableExitTypes
    * @description
    * Clears the previously selected types.
    */
-  function reloadExitTypes() {
+  function refreshAvailableExitTypes() {
 
     // clear old data
-    $ctrl.selectedExitType = {};
-    $ctrl.destinationLabel = '';
-    delete $ctrl.entity;
+    resetSelection();
 
     if (!$ctrl.depot) { return; }
 
     // get the final types by filtering on what is allowed in the depot
-    $ctrl.types = types
-      .filter(type => $ctrl.depot[type.allowedKey]);
+    $ctrl.types =  TypeService.exitTypes.filter(
+      ({ allowedKey }) => $ctrl.depot[allowedKey]
+    );
 
     $ctrl.hasNoTypesDefined = ($ctrl.types.length === 0);
   }

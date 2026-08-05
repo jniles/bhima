@@ -40,6 +40,29 @@ function StockExitFormService(
     TO_PATIENT, TO_LOSS, TO_SERVICE, TO_OTHER_DEPOT,
   } = bhConstants.flux;
 
+  /**
+   * Builds a short, comma separated, human readable label list (max 5 unique
+   * labels, with a "(+N ...)" suffix if there are more). Shared by both
+   * setLotsFromShipmentList() and setLotsFromInventoryList() so the logic
+   * for summarizing "which items had a problem" only lives in one place.
+   * @param {Array} array - a list of rows, each with a `.text` property
+   * @returns {string}
+   */
+  function makeUniqueLabels(array) {
+    const items = array
+      .map(row => row.text)
+      .filter((label, index, arr) => arr.indexOf(label) === index)
+      .sort((a, b) => a.localeCompare(b));
+ 
+    if (items.length > 5) {
+      const len = items.length - 4;
+      return [...items.slice(0, 5), `(+${len} ...), `].join(', ');
+    }
+ 
+    return items.join(', ');
+  }
+ 
+
   const today = new Date();
   const $date = $filter('date');
 
@@ -211,15 +234,15 @@ function StockExitFormService(
     const available = this._pool.list()
       .filter(row => row.inventory_uuid === inventoryUuid)
       .filter(row => (this.allowExpired ? true : !row.isExpired(this.details.date)))
-      .sort((a, b) => a.expiration_date > b.expiration_date);
-
+      .sort((a, b) => new Date(a.expiration_date) - new Date(b.expiration_date));
+ 
     if (lotUuid) {
       const lot = this._pool.unavailable.get(lotUuid);
       if (lot) {
         return [lot, ...available];
       }
     }
-
+ 
     return available;
   };
 
@@ -405,26 +428,6 @@ function StockExitFormService(
       }
     });
 
-    // this makes an array of labels not longer than 5 to present
-    // to the user in a nice warning/error message.
-    /**
-     *
-     * @param array
-     */
-    function makeUniqueLabels(array) {
-      const items = array
-        .map(row => row.text)
-        .filter((label, index, arr) => arr.indexOf(label) === index)
-        .sort((a, b) => a.localeCompare(b));
-
-      if (items.length > 5) {
-        const len = items.length - 4;
-        return [...items.slice(0, 5), `(+${len} ...), `].join(', ');
-      }
-
-      return items.join(', ');
-    }
-
     // make nice text for error messages
     const unavailableLabels = makeUniqueLabels(unavailable);
     const insufficientLabels = makeUniqueLabels(insufficient);
@@ -445,6 +448,7 @@ function StockExitFormService(
     this._toggleInfoMessage(available.length > 0, 'success', SUCCESS_FILLED_N_ITEMS, { count : available.length });
 
   };
+
 
   StockExitForm.prototype.setLotsFromInventoryList = function setLotsFromInventoryList(inventories, uuidKey = 'uuid') {
     // three lists

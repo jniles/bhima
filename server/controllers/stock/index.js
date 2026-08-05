@@ -6,7 +6,7 @@
  *
  * This module is responsible for handling all crud operations relatives to stocks
  * and define all stock API functions
- * @requires lib/uuid
+ * @requires lib/util
  * @requires lib/db
  * @requires stock/core
  */
